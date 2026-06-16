@@ -1,0 +1,281 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: 'Inter', sans-serif; }
+canvas { display: block; pointer-events: none; }
+
+#scroll-container {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  overflow-y: scroll;
+  pointer-events: auto;
+  z-index: 10;
+}
+#scroll-inner { height: 5000vh; }
+
+#ui-overlay {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* ── TOP BAR ──────────────────────────────────────────────────────────────── */
+#topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  background: rgba(13, 17, 23, 0.82);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(48, 54, 61, 0.7);
+  z-index: 30;
+  pointer-events: auto;
+}
+#topbar-left {
+  display: flex; align-items: center; gap: 6px;
+}
+.gh-logo {
+  width: 20px; height: 20px;
+  color: rgba(255,255,255,0.75);
+  flex-shrink: 0;
+}
+#topbar-owner {
+  font-size: 13px; font-weight: 400;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.01em;
+}
+.topbar-sep {
+  color: rgba(255,255,255,0.25);
+  font-size: 14px;
+}
+.topbar-repo {
+  font-size: 13px; font-weight: 600;
+  color: #58a6ff;
+  letter-spacing: 0.01em;
+}
+#topbar-right {
+  display: flex; align-items: center; gap: 10px;
+}
+.topbar-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 14px;
+  font-size: 12px; font-weight: 500;
+  color: rgba(255,255,255,0.75);
+  background: rgba(48, 54, 61, 0.5);
+  border: 1px solid rgba(48, 54, 61, 0.9);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  pointer-events: auto;
+  letter-spacing: 0.02em;
+}
+.topbar-btn:hover {
+  background: rgba(56, 139, 253, 0.15);
+  border-color: rgba(56, 139, 253, 0.4);
+  color: #58a6ff;
+}
+.topbar-btn svg {
+  width: 14px; height: 14px; color: inherit; flex-shrink: 0;
+}
+
+/* ── SCROLL HINT ──────────────────────────────────────────────────────────── */
+#scroll-hint {
+  position: fixed; bottom: 40px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+  transition: opacity 0.8s;
+}
+#scroll-hint span {
+  font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); font-weight: 300;
+}
+#scroll-hint .arrow {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+  animation: arrowPulse 2s ease-in-out infinite;
+}
+@keyframes arrowPulse {
+  0%,100% { opacity: 0.3; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.2); }
+}
+
+/* ── PROJECT INFO PANEL ───────────────────────────────────────────────────── */
+#project-info {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 0 32px 28px;
+  opacity: 0; transition: opacity 1.2s;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(13,17,23,0.96) 0%, rgba(13,17,23,0.72) 70%, transparent 100%);
+  padding-top: 48px;
+}
+#project-info.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Left meta column */
+#project-meta {
+  display: flex; flex-direction: column; gap: 10px;
+  max-width: 520px;
+}
+.gh-repo-header {
+  display: flex; align-items: center; gap: 8px;
+}
+.repo-icon {
+  width: 16px; height: 16px;
+  color: #8b949e; flex-shrink: 0;
+}
+.project-label {
+  font-size: 12px; font-weight: 400;
+  color: #58a6ff;
+  letter-spacing: 0.02em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.gh-badge {
+  font-size: 10px; font-weight: 500;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 20px;
+  padding: 1px 8px;
+  letter-spacing: 0.05em;
+}
+.project-title {
+  font-size: 26px; font-weight: 600;
+  color: rgba(255,255,255,0.95);
+  letter-spacing: 0.01em; line-height: 1.2;
+}
+.project-desc-text {
+  font-size: 13px; color: #8b949e; font-weight: 300;
+  line-height: 1.7; max-width: 460px;
+}
+
+/* Stats row */
+.gh-stats {
+  display: flex; align-items: center; gap: 16px;
+  flex-wrap: wrap;
+}
+.gh-stat {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: #8b949e; font-weight: 400;
+}
+.gh-stat svg {
+  width: 14px; height: 14px; color: #8b949e; flex-shrink: 0;
+}
+.lang-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #f1e05a;
+  flex-shrink: 0;
+}
+
+/* Tech chips */
+#tech-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 2px;
+}
+.tech-chip {
+  font-size: 11px; font-weight: 500;
+  color: #58a6ff;
+  background: rgba(56, 139, 253, 0.1);
+  border: 1px solid rgba(56, 139, 253, 0.3);
+  border-radius: 20px;
+  padding: 3px 11px;
+  letter-spacing: 0.03em;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Right actions column */
+#project-actions {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+  min-width: 200px;
+}
+#project-counter {
+  font-size: 11px; letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.3); font-weight: 300;
+  font-family: 'JetBrains Mono', monospace;
+}
+.action-hint {
+  font-size: 10px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.05em; text-align: right;
+}
+
+/* GitHub green CTA button */
+.gh-green-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 9px 20px;
+  font-size: 13px; font-weight: 600;
+  color: #fff;
+  background: #238636;
+  border: 1px solid #2ea44f;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.gh-green-btn:hover {
+  background: #2ea44f;
+  border-color: #3fb950;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(46, 164, 79, 0.4);
+}
+.gh-green-btn svg {
+  width: 15px; height: 15px; flex-shrink: 0;
+}
+
+/* Outline secondary button */
+.gh-outline-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 7px 16px;
+  font-size: 12px; font-weight: 500;
+  color: rgba(255,255,255,0.6);
+  background: rgba(48, 54, 61, 0.4);
+  border: 1px solid rgba(48, 54, 61, 0.9);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.gh-outline-btn:hover {
+  background: rgba(56, 139, 253, 0.1);
+  border-color: rgba(56, 139, 253, 0.4);
+  color: #58a6ff;
+}
+.gh-outline-btn svg {
+  width: 14px; height: 14px; flex-shrink: 0;
+}
+
+/* ── LOADING ──────────────────────────────────────────────────────────────── */
+#loading {
+  position: fixed; inset: 0;
+  background: #000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 100;
+  transition: opacity 1s ease;
+}
+#loading .load-name {
+  font-size: 11px; letter-spacing: 0.5em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); font-weight: 300; margin-bottom: 40px;
+}
+#loading .bar-wrap {
+  width: 200px; height: 1px;
+  background: rgba(255,255,255,0.08);
+  position: relative; overflow: hidden;
+}
+#loading .bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7af0ff, #c084fc);
+  width: 0%; transition: width 0.3s ease;
+}
+#loading .pct {
+  font-size: 10px; color: rgba(255,255,255,0.2);
+  letter-spacing: 0.3em; margin-top: 16px;
+  font-variant-numeric: tabular-nums;
+}
