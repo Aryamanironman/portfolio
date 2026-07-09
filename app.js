@@ -202,6 +202,71 @@ projectGroup.name = 'projectGroup';
 projectGroup.visible = false;
 scene.add(projectGroup);
 
+// Extract the first meaningful paragraph from a README's markdown text
+function extractReadmeDescription(markdown) {
+  if (!markdown) return null;
+  // Remove frontmatter
+  const noFrontmatter = markdown.replace(/^---[\s\S]*?---\n?/, '');
+  // Remove HTML comments
+  const noComments = noFrontmatter.replace(/<!--[\s\S]*?-->/g, '');
+  // Split into lines
+  const lines = noComments.split('\n');
+  const paragraphLines = [];
+  let inCodeBlock = false;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    // Toggle code block state
+    if (line.startsWith('```') || line.startsWith('~~~')) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+    // Skip headings, badges/images, blank lines, horizontal rules, list items
+    if (!line) {
+      if (paragraphLines.length > 0) break; // end of first paragraph
+      continue;
+    }
+    if (/^#{1,6}\s/.test(line)) continue;   // heading
+    if (/^[\-\*_]{3,}$/.test(line)) continue; // hr
+    if (/^[\-\*\+]\s/.test(line)) continue;   // list
+    if (/^\d+\.\s/.test(line)) continue;      // ordered list
+    if (/^>/.test(line)) continue;            // blockquote
+    if (/^\[!/.test(line)) continue;          // GitHub alert
+    // Strip inline markdown: images, links, bold, italic, code
+    const clean = line
+      .replace(/!\[.*?\]\(.*?\)/g, '')   // images
+      .replace(/\[.*?\]\(.*?\)/g, m => m.replace(/\[(.*)\].*/, '$1')) // links -> text
+      .replace(/`{1,3}[^`]*`{1,3}/g, '') // inline code
+      .replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1') // bold/italic
+      .replace(/<[^>]+>/g, '')            // HTML tags
+      .replace(/\[\!\[.*?\].*?\]/g, '')  // badge links
+      .trim();
+    // Skip lines that are purely badge/shield URLs or empty after cleaning
+    if (!clean || /^https?:\/\//.test(clean) || clean.length < 10) continue;
+    paragraphLines.push(clean);
+    if (paragraphLines.length >= 4) break; // cap at ~4 sentences
+  }
+  if (paragraphLines.length === 0) return null;
+  return paragraphLines.join(' ');
+}
+
+async function fetchReadmeDescription(repoName) {
+  try {
+    const res = await fetch(`https://api.github.com/repos/Aryamanironman/${repoName}/readme`, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.content) return null;
+    // GitHub returns base64-encoded content
+    const decoded = atob(data.content.replace(/\n/g, ''));
+    return extractReadmeDescription(decoded);
+  } catch {
+    return null;
+  }
+}
+
 async function fetchGithubProjects() {
   try {
     const response = await fetch('https://api.github.com/users/Aryamanironman/repos?sort=updated&per_page=30');
@@ -215,7 +280,13 @@ async function fetchGithubProjects() {
     });
     const selected = sorted.slice(0, 11);
     if (selected.length === 0) return null;
-    return selected.map(repo => {
+
+    // Fetch READMEs in parallel for all selected repos
+    const readmeDescs = await Promise.all(
+      selected.map(repo => fetchReadmeDescription(repo.name))
+    );
+
+    return selected.map((repo, idx) => {
       const cleanTitle = repo.name
         .split(/[-_]+/)
         .map(w => w.charAt(0).toUpperCase() + w.slice(1))
@@ -231,10 +302,14 @@ async function fetchGithubProjects() {
         });
       }
       if (techList.length === 0) techList.push('Web');
+      // Priority: README > repo.description > fallback
+      const desc = readmeDescs[idx]
+        || repo.description
+        || `A public GitHub repository containing source code and development details for ${cleanTitle}.`;
       return {
         title: cleanTitle,
         tech: techList.join(' · '),
-        desc: repo.description || `A public GitHub repository containing source code and development details for ${cleanTitle}.`,
+        desc,
         url: repo.html_url,
         year: new Date(repo.created_at).getFullYear(),
         stars: repo.stargazers_count || 0,
@@ -378,22 +453,7 @@ loader.load('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/helvetike
     projectCount = projects.length;
   }
 
-  // ── Enrich descriptions from actual README content ────────────────────────
-  const readmeDescriptions = {
-    'ai-hand-music-studio': 'Transform hand gestures into music in real-time using your webcam. Uses MediaPipe Hands to detect finger movements — each finger maps to a musical note (Thumb→C, Index→D, Middle→E, Ring→F, Pinky→G). Supports Piano, Synth, and Guitar sounds, live waveform visualization, a recording system, and a glassmorphism dark UI with neon glow effects.',
-    'ai-job-match': 'Upload your resume and paste any job description to receive an AI-powered match score (0–100%), a skills gap analysis, section-by-section resume feedback, and a prioritized learning roadmap with time estimates. Built with React + Vite frontend, Node/Express backend, Google Gemini 2.0 Flash as the AI engine, and pdf-parse for PDF resume support.',
-    'ai-ui-designer': 'Production-quality web app that converts natural language prompts into React + Tailwind UI components with a live preview and editable code via Monaco Editor. Powered by NVIDIA LLaMA-3 via an OpenAI-compatible backend proxy that keeps API secrets off the client. Generated code runs in a sandboxed iframe for safety.',
-    'aura-chat': 'A real-time chat application with a futuristic glassmorphism UI and an interactive canvas experience. Powered by Socket.io for instant messaging, with a React (Vite) frontend and a Node.js/Express backend handling real-time socket connections. Features smooth transitions and a modern dark aesthetic.',
-    'ai-emotional-companion': 'A browser-based AI emotional companion app built with React and Vite, deployed on Vercel. Provides a conversational interface designed around emotional support and mental wellness, with a clean glassmorphism UI and responsive layout built with Tailwind CSS.',
-  };
 
-  projects = projects.map(proj => {
-    const slug = proj.title.toLowerCase().replace(/\s+/g, '-');
-    if (readmeDescriptions[slug]) {
-      return { ...proj, desc: readmeDescriptions[slug] };
-    }
-    return proj;
-  });
 
 
   const letterWaypoints = [
