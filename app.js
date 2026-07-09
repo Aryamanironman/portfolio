@@ -1235,6 +1235,8 @@ scrollContainer.addEventListener('scroll', () => {
 });
 
 const scrollHint = document.getElementById('scroll-hint');
+const soundHint = document.getElementById('sound-hint');
+const interactHint = document.getElementById('interact-hint');
 const projectInfo = document.getElementById('project-info');
 
 // ─── PARTICLE Z TRACKING ──────────────────────────────────────────────────────
@@ -1271,8 +1273,15 @@ function animate() {
 
   const phase = scrollT;
 
-  if (phase > 0.05) scrollHint.style.opacity = '0';
-  else scrollHint.style.opacity = '1';
+  if (phase > 0.05) {
+    scrollHint.style.opacity = '0';
+    soundHint.style.opacity = '0';
+    interactHint.style.opacity = '0';
+  } else {
+    scrollHint.style.opacity = '1';
+    soundHint.style.opacity = '1';
+    interactHint.style.opacity = '1';
+  }
 
   const projectCounter = document.getElementById('project-counter');
   if (phase > projectStart) {

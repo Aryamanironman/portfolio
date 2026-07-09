@@ -99,6 +99,44 @@ canvas { display: block; pointer-events: none; }
   50% { opacity: 1; transform: scaleY(1.2); }
 }
 
+/* ── SIDE HINTS ───────────────────────────────────────────────────────────── */
+#sound-hint {
+  position: fixed; bottom: 40px; left: 36px;
+  display: flex; flex-direction: row; align-items: center; gap: 8px;
+  pointer-events: none;
+  transition: opacity 0.8s;
+}
+#sound-hint svg {
+  width: 13px; height: 13px;
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+#sound-hint span {
+  font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); font-weight: 300;
+}
+
+#interact-hint {
+  position: fixed; bottom: 40px; right: 36px;
+  display: flex; flex-direction: row; align-items: center; gap: 8px;
+  pointer-events: none;
+  transition: opacity 0.8s;
+}
+#interact-hint span {
+  font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); font-weight: 300;
+}
+#interact-hint svg {
+  width: 13px; height: 13px;
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+  animation: interactBounce 2s ease-in-out infinite;
+}
+@keyframes interactBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.3; }
+  50% { transform: translateY(3px); opacity: 0.8; }
+}
+
 /* ── PROJECT INFO PANEL ───────────────────────────────────────────────────── */
 #project-info {
   position: fixed; bottom: 0; left: 0; right: 0;
